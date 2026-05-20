@@ -1,0 +1,30 @@
+#!/bin/bash
+
+source /home/{{ monitor_user }}/uptime-monitor/config.sh
+
+URLS=(
+  "https://google.com"
+  "https://github.com"
+  "https://httpstat.us/500"
+)
+
+LOGFILE="/home/{{ monitor_user }}/uptime-monitor/uptime.log"
+
+send_alert() {
+  local message="$1"
+  curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+    -d chat_id="${TELEGRAM_CHAT_ID}" \
+    -d text="$message" > /dev/null
+}
+
+for URL in "${URLS[@]}"; do
+  STATUS=$(curl -o /dev/null -s -w "%{http_code}" --max-time 10 "$URL")
+  TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+
+  if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+    echo "[$TIMESTAMP] UP ($STATUS): $URL" >> "$LOGFILE"
+  else
+    echo "[$TIMESTAMP] DOWN ($STATUS): $URL" >> "$LOGFILE"
+    send_alert "🚨 DOWN: $URL returned HTTP $STATUS at $TIMESTAMP"
+  fi
+done

@@ -1,0 +1,42 @@
+---
+- name: Install curl
+  apt:
+    name: curl
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Create uptime-monitor directory
+  file:
+    path: /home/{{ monitor_user }}/uptime-monitor
+    state: directory
+    owner: "{{ monitor_user }}"
+    group: "{{ monitor_user }}"
+    mode: '0755'
+  become: yes
+
+- name: Deploy monitor script from template
+  template:
+    src: monitor.sh.j2
+    dest: /home/{{ monitor_user }}/uptime-monitor/monitor.sh
+    owner: "{{ monitor_user }}"
+    group: "{{ monitor_user }}"
+    mode: '0755'
+  become: yes
+
+- name: Copy config file
+  copy:
+    src: config.sh
+    dest: /home/{{ monitor_user }}/uptime-monitor/config.sh
+    owner: "{{ monitor_user }}"
+    group: "{{ monitor_user }}"
+    mode: '0600'
+  become: yes
+
+- name: Add cron job
+  cron:
+    name: "uptime monitor"
+    minute: "*/5"
+    job: "/home/{{ monitor_user }}/uptime-monitor/monitor.sh"
+    user: "{{ monitor_user }}"
+  become: yes

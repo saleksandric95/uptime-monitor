@@ -1,0 +1,5 @@
+---
+- name: Deploy uptime monitor
+  hosts: uptime_monitors
+  roles:
+    - uptime_monitor
